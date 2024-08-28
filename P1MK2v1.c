@@ -106,7 +106,22 @@ int main() {
             }
             //$CAT
             else if (strncmp(input, "$cat ", 5) == 0) {
-                // Código para el comando $cat
+                // Primero obtenemos el nombre del archivo.
+                char *filename = input + 5;
+                // Se abre el archivo en modo lectura.
+                FILE *file = fopen(filename, "r");
+                
+                // En caso de que el archivo no exista:
+                if (file == NULL) {
+                    perror("Error al abrir el archivo");
+                // En caso de que se logre abrir un archivo:
+                } else {
+                    char line[256]; // Se establece un lìmite para las lineas.
+                    while (fgets(line, sizeof(line), file)) {  // Leer línea por línea.
+                        printf("%s", line);  // Imprimir cada línea.
+                    }
+                    fclose(file);  // Cerrar el archivo.
+                }
             }
             //$HEAD
             else if (strncmp(input, "$head ", 6) == 0) {
