@@ -123,9 +123,26 @@ int main() {
                     fclose(file);  // Cerrar el archivo.
                 }
             }
-            //$HEAD
+            //$HEAD (aun en proceso)
             else if (strncmp(input, "$head ", 6) == 0) {
-                // Código para el comando $head
+                // Primero obtenemos el nombre del archivo:
+                char *filename = input + 6;
+                // Se abre el archivo con este nombre en modo lectura:
+                FILE *file = fopen(filename, "r");
+
+                // En caso de que el archivo no exista:
+                if (file == NULL) {
+                    perror("Error al abrir el archivo");
+                // En caso de que se logre abrir un archivo:
+                } else {
+                    char line[256]; // Se establece un límite de carácteres para las líneas del archivo.
+                    int line_count = 0; // Contador de lìneas leidas.
+                    while (fgets(line, sizeof(line), file) && line_count < 10) {  // Leer línea por línea.
+                        printf("%s", line);  // Imprimir cada línea.
+                        line_count++;
+                    }
+                    fclose(file);  // Cerrar el archivo.
+                }
             }
             //$TAIL
             else if (strncmp(input, "$tail ", 6) == 0) {
