@@ -148,13 +148,140 @@ int main() {
             else if (strncmp(input, "$tail ", 6) == 0) {
                 // Código para el comando $tail
             }
-            //$GREP
-            else if (strncmp(input, "$grep", 5) == 0) {
-                // Código para el comando $grep
+            //$GREP //falta probar con los pipes
+            else if (strncmp(input, "$grep ", 6) == 0){
+                char *token = strtok(input + 6, " ");
+                int show_line_numbers = 0, ignore_case = 0, show_filenames = 0, show_no_match = 0;
+                char *pattern = NULL;
+                char *filename = NULL;
+
+                //Procesar opciones
+                while(token != NULL){
+                    if(token[0] == '-'){
+                        if(strchr(token, 'n')) show_line_numbers = 1;
+                        if(strchr(token, 'i')) ignore_case = 1;
+                        if(strchr(token, 'l')) show_filenames = 1;
+                        if(strchr(token, 'v')) show_no_match = 1;
+                    }else if(pattern == NULL){
+                        pattern = token;
+
+                        //Manejar comillas en el patrón
+                        if(pattern[0] == '"' && pattern[strlen(pattern)-1] == '"'){
+                            pattern[strlen(pattern)-1] = '\0'; //Eliminar comilla final
+                            pattern++; //omitir comilla inicial
+                        }
+                    }else{
+                        filename = token;
+                    }
+                    token = strtok(NULL, " ");
+                }
+
+                if(pattern == NULL || filename == NULL){
+                    fprintf(stderr, "Modo de uso: $grep -nivl patron archivo\n");
+                }else{
+                    FILE *file = fopen(filename, "r");
+                    if(file == NULL){
+                        perror("Error al abrir el archivo");
+                    }else{
+                        char line[256];
+                        int line_number = 0;
+                        int match_count = 0;
+
+                        while(fgets(line, sizeof(line),file)){
+                            line_number++;
+                            char *match = strstr(line, pattern);
+
+                            //-i: Búsqueda insensible a mayúsculas y minúsculas
+                            if(ignore_case){
+                                char line_lower[256];
+                                char pattern_lower[256];
+                                for(int i = 0; line[i]; i++){
+                                    line_lower[i] = tolower(line[i]);
+                                }
+                                line_lower[strlen(line)] = '\0';
+                                for(int i = 0; pattern[i]; i++){
+                                    pattern_lower[i] = tolower(pattern[i]);
+                                }
+                                pattern_lower[strlen(pattern)] = '\0';
+                                match = strstr(line_lower, pattern_lower);
+                            }
+
+                            //-v: Muestra líneas que no coinciden con el patrón
+                            int is_match = (match != NULL);
+                            if(show_no_match){
+                                is_match = !is_match;
+                            }
+                            if(is_match){
+                                match_count = 1;
+                                if(show_filenames){
+                                    printf("%s\n", filename);
+                                    break; //-l: se muestra el nombre del archivo una vez
+                                }else{
+                                    if(show_line_numbers){
+                                        printf("%d:", line_number);
+                                    }
+                                    printf("%s", line);
+                                }
+                            }
+                        }
+                        printf("\n");
+                        fclose(file); 
+
+                        if(show_filenames && !match_count){
+                        //Por si no hay nada al usar -l
+                        }
+                    } 
+                }
             }
-            //$WC
-            else if (strncmp(input, "$wc", 3) == 0) {
-                // Código para el comando $wc
+            //$WC //Falta probar con los pipes
+            else if (strncmp(input, "$wc ", 4) == 0){
+                char *token = strtok(input + 4, " ");
+                int lines_count = 0, words_count = 0, chars_count = 0;
+                char *filename = NULL;
+
+                //Procesar -l,-w,-c
+                while(token != NULL){
+                    if(token[0] == '-'){
+                        if(strchr(token, 'l')) lines_count = 1;
+                        if(strchr(token, 'w')) words_count = 1;
+                        if(strchr(token, 'c')) chars_count = 1;
+                    }else{
+                        filename = token;
+                    }
+                    token = strtok(NULL, " ");
+                }
+
+                if(!lines_count && !words_count && !chars_count){
+                    lines_count = 1;
+                    words_count = 1;
+                    chars_count = 1;
+                }
+
+                if(filename == NULL){
+                    fprintf(stderr, "Modo de uso: $wc -lwc archivo\n");
+                }else{
+                    FILE *file = fopen(filename, "r");
+                    if(file == NULL){
+                        perror("Error al abrir el archivo");
+                    }else{
+                        int lines = 0, words = 0, chars = 0;
+                        char line[256];
+                        while(fgets(line, sizeof(line), file)){
+                            chars += strlen(line);
+                            lines++;
+                            char *word = strtok(line, " \t\n");
+                            while(word != NULL){
+                                words++;
+                                word = strtok(NULL, " \t\n");
+                            }
+                        }
+                        fclose(file);
+
+                        if(lines_count) printf("Lineas: %d\n", lines);
+                        if(words_count) printf("Palabras: %d\n", words);
+                        if(chars_count) printf("Caracteres: %d\n", chars);
+                    }
+                }
             }
             //$SORT
             else if (strncmp(input, "$sort", 5) == 0) {
