@@ -102,7 +102,26 @@ int main() {
 
             //$ECHO
             if (strncmp(input, "$echo", 5) == 0) {
-                // Código para el comando $echo
+                //obtiene el texto después de "$echo"
+                char *echo_text = input + 5;
+
+                //crear un proceso hijo
+                pid_t pid = fork();
+
+                if (pid < 0) {
+                    perror("Error al crear el proceso hijo");
+                    exit(EXIT_FAILURE);
+                } else if (pid == 0) {
+                    //PROCESO HIJO
+
+                    //crea un arreglo de argumentos para exec
+                    char *args[] = {"echo", echo_text, NULL};
+
+                    //ejecuta el comando en proceso hijo
+                    execvp("echo", args);
+
+                    perror("Error al ejecutar el comando echo");
+                    _exit(EXIT_FAILURE);
             }
             //$CAT
             else if (strncmp(input, "$cat ", 5) == 0) {
@@ -285,7 +304,41 @@ int main() {
             }
             //$SORT
             else if (strncmp(input, "$sort", 5) == 0) {
-                // Código para el comando $sort
+                char *sort_args[10]; 
+                char *token = strtok(input, " ");
+                int i = 0;
+
+                while (token != NULL && i < 10) {
+                    sort_args[i] = token;
+                    token = strtok(NULL, " ");
+                    i++;
+                }
+
+                sort_args[i] = NULL;
+
+                if (i >= 2) {
+                    pid_t pid = fork();
+
+                    if (pid < 0) {
+                        perror("Error al crear el proceso hijo");
+                        exit(EXIT_FAILURE);
+                    } else if (pid == 0) {
+                        //PROCESO HIJO
+                        execvp(sort_args[1], sort_args + 1);
+                        perror("Error al ejecutar el comando sort");
+                        exit(EXIT_FAILURE);
+                    } else {
+                        //PROCESO PADRE
+                        int status;
+                        wait(&status);
+
+                        if (WIFEXITED(status)) {
+                            printf("El comando sort ha terminado con código de salida: %d\n", WEXITSTATUS(status));
+                        }
+                    }
+                } else {
+                    printf("Uso: $sort [opciones] archivo\n");
+                }
             }
             //$PASTE
             else if (strncmp(input, "$paste", 6) == 0) {
