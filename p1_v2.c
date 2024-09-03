@@ -5,134 +5,182 @@
 #include <sys/wait.h>
 #include <errno.h>
 
-/*
-CREO QUE FALTA CONFIGURAR QUE SEAN PIPES ILIMITADAS Y ARGS ILIMITADOS 
-TODO ILIMITADO CON MEMORIA DINÁMICA SUPONGO
-Y HACER MÁS PRUEBAS, ETC, NO ES VERSIÓN FINAL
-*/
-
 #define MAX_INPUT_LENGTH 1024
-#define MAX_NUM_PIPES 20  //Número máximo de pipes que se pueden usar en un comando
+// Agregación de memoria dinámica
 
-//Divide un comando en argumentos
-int parse_command(char* command, char** args){
-    int n = 0;
-    while((args[n] = strsep(&command, " ")) != NULL){
-        if(*args[n] != '\0') n++;
+// Divide un comando en argumentos
+int parse_command(char *command, char ***args) {
+    int num_args = 0;
+    char *token;
+    *args = NULL;
+
+    token = strtok(command, " ");
+    while (token != NULL) {
+        *args = realloc(*args, sizeof(char *) * (num_args + 1));
+        if (*args == NULL) {
+            perror("Error al asignar memoria");
+            exit(EXIT_FAILURE);
+        }
+        (*args)[num_args] = token;
+        num_args++;
+        token = strtok(NULL, " ");
     }
-    return n;
+
+    *args = realloc(*args, sizeof(char *) * (num_args + 1));
+    if (*args == NULL) {
+        perror("Error al asignar memoria");
+        exit(EXIT_FAILURE);
+    }
+    (*args)[num_args] = NULL;
+
+    return num_args;
 }
 
-void execute_command(char *command){
-    char *args[MAX_INPUT_LENGTH];
-    int num_params = parse_command(command, args);
+// Ejecuta un comando
+void execute_command(char *command) {
+    char **args;
+    int num_args = parse_command(command, &args);
 
-    //Ejecuta el comando
-    if(execvp(args[0], args) == -1){
+    if (execvp(args[0], args) == -1) {
         perror("Error al ejecutar el comando");
         exit(EXIT_FAILURE);
     }
 }
 
-//Ejecución de comandos conectados por pipes
-void execute_pipe_commands(char *commands[], int num_commands){
-    int pipe_fd[MAX_NUM_PIPES][2];
+// Ejecuta comandos conectados por pipes
+void execute_pipe_commands(char *commands[], int num_commands) {
+    int **pipe_fds;
     pid_t pid;
+    int i;
 
-    //Crear los pipes necesarios
-    for(int i = 0; i < num_commands - 1; i++){
-        if(pipe(pipe_fd[i]) == -1){
+    // Crear los pipes necesarios
+    pipe_fds = malloc(sizeof(int *) * (num_commands - 1));
+    if (pipe_fds == NULL) {
+        perror("Error al asignar memoria para pipes");
+        exit(EXIT_FAILURE);
+    }
+
+    for (i = 0; i < num_commands - 1; i++) {
+        pipe_fds[i] = malloc(sizeof(int) * 2);
+        if (pipe(pipe_fds[i]) == -1) {
             perror("Error al crear la tubería");
             exit(EXIT_FAILURE);
         }
     }
 
-    //Iterar sobre cada comando para crear un proceso hijo que lo ejecute
-    for(int i = 0; i < num_commands; i++){
+    // Iterar sobre cada comando para crear un proceso hijo que lo ejecute
+    for (i = 0; i < num_commands; i++) {
         pid = fork();
-        if(pid == -1){
+        if (pid == -1) {
             perror("Error al crear el proceso hijo");
             exit(EXIT_FAILURE);
-        }else if (pid == 0){
-            //Si no es el primer comando, redirige la entrada estándar
-            if(i > 0){
-                dup2(pipe_fd[i - 1][0], STDIN_FILENO);
-            }
-            //Si no es el último comando, redirige la salida estándar
-            if(i < num_commands - 1){
-                dup2(pipe_fd[i][1], STDOUT_FILENO);
-            }
-            //Cerrar todos los pipes en el proceso hijo para que no haya fugas
-            for(int j = 0; j < num_commands - 1; j++){
-                close(pipe_fd[j][0]);
-                close(pipe_fd[j][1]);
+        } else if (pid == 0) {
+            // Si no es el primer comando, redirige la entrada estándar
+            if (i > 0) {
+                if (dup2(pipe_fds[i - 1][0], STDIN_FILENO) == -1) {
+                    perror("Error al redirigir entrada");
+                    exit(EXIT_FAILURE);
+                }
             }
 
-            //Ejecutar el comando actual
+            // Si no es el último comando, redirige la salida estándar
+            if (i < num_commands - 1) {
+                if (dup2(pipe_fds[i][1], STDOUT_FILENO) == -1) {
+                    perror("Error al redirigir salida");
+                    exit(EXIT_FAILURE);
+                }
+            }
+
+            // Cerrar todos los pipes en el proceso hijo para que no haya fugas
+            for (int j = 0; j < num_commands - 1; j++) {
+                close(pipe_fds[j][0]);
+                close(pipe_fds[j][1]);
+            }
+
+            // Ejecutar el comando actual
             execute_command(commands[i]);
             perror("Error al ejecutar el comando");
             exit(EXIT_FAILURE);
         }
     }
 
-    //Cerrar todos los pipes en el proceso padre
-    for(int i = 0; i < num_commands - 1; i++){
-        close(pipe_fd[i][0]);
-        close(pipe_fd[i][1]);
+    // Cerrar todos los pipes en el proceso padre
+    for (int j = 0; j < num_commands - 1; j++) {
+        close(pipe_fds[j][0]);
+        close(pipe_fds[j][1]);
+        free(pipe_fds[j]);
     }
+    free(pipe_fds);
 
-    //Espera a que todos los procesos hijos terminen
-    for(int i = 0; i < num_commands; i++){
+    // Esperar a que todos los procesos hijos terminen
+    for (int j = 0; j < num_commands; j++) {
         wait(NULL);
     }
 }
 
-int main(){
+int main() {
     char input[MAX_INPUT_LENGTH];
-    char *commands[MAX_NUM_PIPES + 1]; //Se almacenan los comandos separados
+    char **commands;
+    int num_commands;
 
-    while(1){ //Bucle infinito para mantener la shell en ejecución
-        printf("$ "); //Prompt
-        fflush(stdout); //
+    while (1) { // Bucle infinito para mantener la shell en ejecución
+        printf("$ "); // Prompt
+        fflush(stdout);
 
-        //Lee la entrada del usuario
-        if(fgets(input, sizeof(input), stdin) == NULL){
+        // Lee la entrada del usuario
+        if (fgets(input, sizeof(input), stdin) == NULL) {
             perror("Error al leer la entrada");
             exit(EXIT_FAILURE);
         }
 
-        input[strcspn(input, "\n")] = '\0'; //Elimina el salto de línea al final
+        input[strcspn(input, "\n")] = '\0'; // Elimina el salto de línea al final
 
-        //Si el usuario escribe "exit", se termina el programa
-        if(strcmp(input, "exit") == 0){
+        // Si el usuario escribe "exit", se termina el programa
+        if (strcmp(input, "exit") == 0) {
             break;
         }
 
-        //Divide el input en comandos usando "|" como delimitador
-        int num_commands = 0;
-        commands[num_commands] = strtok(input, "|");
-        while(commands[num_commands] != NULL && num_commands < MAX_NUM_PIPES){
-            commands[++num_commands] = strtok(NULL, "|");
+        // Divide el input en comandos usando "|" como delimitador
+        char *token = strtok(input, "|");
+        num_commands = 0;
+        commands = NULL;
+
+        while (token != NULL) {
+            commands = realloc(commands, sizeof(char *) * (num_commands + 1));
+            if (commands == NULL) {
+                perror("Error al asignar memoria");
+                exit(EXIT_FAILURE);
+            }
+            commands[num_commands++] = token;
+            token = strtok(NULL, "|");
+        }
+        commands = realloc(commands, sizeof(char *) * (num_commands + 1));
+        if (commands == NULL) {
+            perror("Error al asignar memoria");
+            exit(EXIT_FAILURE);
+        }
+        commands[num_commands] = NULL;
+
+        // Elimina espacios extra en los comandos
+        for (int i = 0; i < num_commands; i++) {
+            commands[i] += strspn(commands[i], " ");
         }
 
-        //Elimina espacios extra en los comandos
-        for(int i = 0; i < num_commands; i++){
-            commands[i] = commands[i] + strspn(commands[i], " ");
-        }
-
-        //Ejecución de comandos, si hay más de uno se ejecuta con pipes
-        if(num_commands > 1){
+        // Ejecución de comandos, si hay más de uno se ejecuta con pipes
+        if (num_commands > 1) {
             execute_pipe_commands(commands, num_commands);
-        }else{
+        } else {
             pid_t pid = fork();
-            if(pid == 0){
+            if (pid == 0) {
                 execute_command(commands[0]);
-            }else if(pid < 0){
+            } else if (pid < 0) {
                 perror("Error al crear el proceso hijo");
-            }else{
+            } else {
                 wait(NULL);
             }
         }
+
+        free(commands);
     }
 
     return 0;
