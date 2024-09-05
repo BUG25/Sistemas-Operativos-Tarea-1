@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <errno.h>
+#include "favs.h"
 
 #define MAX_INPUT_LENGTH 1024
 // Agregación de memoria dinámica
@@ -118,6 +119,39 @@ void execute_pipe_commands(char *commands[], int num_commands) {
     }
 }
 
+//PARA MANEJAR LOS COMANDOS FAVS
+//FALTA COMPLETAR
+void handle_favs(char *input){
+    char *token = strtok(input, " ");
+    if(strcmp(token, "favs") == 0){
+        token = strtok(NULL, " ");
+        if(token != NULL){
+            if(strcmp(token, "crear") == 0){
+
+            }else if(strcmp(token, "mostrar") == 0){
+
+            }else if(strcmp(token, "eliminar") == 0){
+                
+            }else if(strcmp(token, "buscar") == 0){
+                char *cmd = strtok(NULL, " ");
+                if(cmd != NULL) favs_buscar(cmd);
+                else printf("Error: Debes proporcionar un comando para buscar.\n");
+            }else if(strcmp(token, "borrar") == 0){
+                favs_borrar();
+            }else if(strcmp(token, "ejecutar") == 0){
+
+            }else if(strcmp(token, "cargar") == 0){
+
+            }else if(strcmp(token, "guardar") == 0){
+
+            }else{
+                printf("Error: Comando desconocido despues de 'favs'.\n");
+            }
+        }
+    }
+    
+}
+
 int main() {
     char input[MAX_INPUT_LENGTH];
     char **commands;
@@ -138,6 +172,12 @@ int main() {
         // Si el usuario escribe "exit", se termina el programa
         if (strcmp(input, "exit") == 0) {
             break;
+        }
+
+        //MANEJO DE LOS FAVS
+        if (strncmp(input, "favs ", 5) == 0) {
+            handle_favs(input);
+            continue;
         }
 
         // Divide el input en comandos usando "|" como delimitador
