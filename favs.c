@@ -22,7 +22,39 @@ void favs_mostrar() {
     }
 }
 
-void favs_eliminar(){}
+void favs_eliminar() {
+    if (fav_count == 0) {
+        printf("No hay comandos favoritos almacenados que eliminar.\n");
+        return;
+    }
+
+    int id_eliminar;
+    printf("Ingrese el ID del comando que desea eliminar: ");
+    scanf("%d", &id_eliminar);
+
+    int encontrar = 0;
+    for (int i = 0; i < fav_count; i++) {
+        if (fav_cmd[i].id == id_eliminar) {
+            // Desplazar los elementos de la lista de comandos almacenados:
+            for (int j = i; j < fav_count - 1; j++) {
+                fav_cmd[j] = fav_cmd[j + 1];
+            }
+            fav_count--;
+
+            // Redimensionar el arreglo para liberar memoria
+            fav_cmd = realloc(fav_cmd, sizeof(Fav) * fav_count);
+
+            printf("Comando con ID (%d) eliminado.\n", id_eliminar);
+            encontrar = 1;
+            break;
+        }
+    }
+
+    if (!encontrar) {
+        printf("No se encontró un comando favorito con el ID (%d).\nPrueba con otro ID.\n", id_eliminar);
+    }
+}
+
 
 void favs_buscar(const char *cmd){
     if (fav_count == 0) {
