@@ -10,7 +10,17 @@ void favs_crear(){}
 
 void favs_agregar(){}
 
-void favs_mostrar(){}
+void favs_mostrar() {
+    if (fav_count == 0) {
+        printf("No hay comandos favoritos almacenados.\n");
+        return;
+    }
+
+    printf("Lista de comandos favoritos almacenados:\n");
+    for (int i = 0; i < fav_count; i++) {
+        printf("[%d] %s\n", fav_cmd[i].id, fav_cmd[i].command);
+    }
+}
 
 void favs_eliminar(){}
 
