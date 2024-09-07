@@ -152,6 +152,51 @@ void handle_favs(char *input){
     
 }
 
+//Función set_secordatorio
+void print_recordatorio(const char *message){
+    const char *BOLD_MAGENTA = "\033[1;35m";
+    const char *RESET_COLOR = "\033[0m";
+    printf("%s* Recordatorio: %s *%s\n", BOLD_MAGENTA, message, BOLD_MAGENTA);
+    printf("%s$ %s", RESET_COLOR, RESET_COLOR);
+    fflush(stdout);
+}
+
+void set_recordatorio(char *input){
+    char *token = strtok(input, " ");
+    if(token == NULL){
+        printf("¡Error! Debes especificar un tiempo y un mensaje\n");
+        return;
+    }
+
+    int seg = atoi(token);
+    if(seg <= 0){
+        printf("¡Error! El tiempo debe ser mayor a cero\n");
+        return;
+    }
+
+    char *mensaje = strtok(NULL, "");
+    if(mensaje == NULL){
+        printf("¡Error! Debes proporcionar un mensaje para el recordatorio\n");
+        return;
+    }
+
+    //Por si se escribe el mensaje entre comillas
+    if(mensaje[0] == '\"'){
+        mensaje++;
+        char *comilla_cierre = strrchr(mensaje, '\"');
+        if(comilla_cierre != NULL) *comilla_cierre = '\0';
+    }
+    
+    pid_t pid = fork();
+    if(pid == 0){
+        sleep(seg);
+        print_recordatorio(mensaje);
+        exit(EXIT_SUCCESS);
+    }else if(pid < 0){
+        perror("Error al crear el proceso hijo");
+    }
+}
+
 int main() {
     char input[MAX_INPUT_LENGTH];
     char **commands;
@@ -177,6 +222,11 @@ int main() {
         //MANEJO DE LOS FAVS
         if (strncmp(input, "favs ", 5) == 0) {
             handle_favs(input);
+            continue;
+        }
+
+        if (strncmp(input, "set recordatorio ", 17) == 0) {
+            set_recordatorio(input + 17);
             continue;
         }
 
