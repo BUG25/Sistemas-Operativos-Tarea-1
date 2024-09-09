@@ -1,149 +1,209 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdlib.h>
 #include "favs.h"
 
 Fav *fav_cmd = NULL;
 int fav_count = 0;
 
-void favs_crear(){}
+void favs_crear(){
+    FILE *Inv = fopen("Inventory.txt", "w");
 
-void favs_agregar(){}
+    // Verificador de error
+    if (Inv == NULL) {
+        fprintf(stderr, "Error al crear el archivo Inventory.txt\n");
+        exit(EXIT_FAILURE);
+    }
+
+    printf("Archivo Inventory.txt creado exitosamente en el directorio.\n");
+
+    fclose(Inv);  // Cierra el archivo
+}
+
+void favs_agregar(){
+
+    FILE *Inv = fopen("Inventory.txt", "a");  // Abre el archivo en modo apéndice
+
+    // Verificador de error
+    if (Inv == NULL) {
+        fprintf(stderr, "Error al crear el archivo Inventory.txt\n");
+        exit(EXIT_FAILURE);
+    }
+
+    printf("Ingrese comandos favoritos: ");
+    scanf("%d", &fav_count);
+
+    fav_cmd = (Fav*)malloc(fav_count * sizeof(Fav));
+
+    if(fav_cmd == NULL){
+        fprintf(stderr, "Error de asignación de memoria.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    for(int i = 0; i< fav_count; i++){
+        printf("Ingresa el comando favorito %d: ", i+1);
+        scanf("%s", fav_cmd[i].name);
+
+        //Comporbación de comando
+        char check_cmd[150]; 
+        snprintf(check_cmd, sizeof(check_cmd), "command -v %s > /dev/null 2>&1", fav_cmd[i].name);  //(buffer, tamaño máximo, "comando que verifica si otro comando existe, redirección de salida estándar y de error") 
+        int existe = system(check_cmd);
+
+        if(existe == 0){
+            fprintf(Inv, "%s\n", fav_cmd[i].name);
+            printf("Comando '%s' agregado a favoritos.\n", fav_cmd[i].name);
+        }else{
+            printf("El comando '%s' NO existe en el sistema:(. \n)", fav_cmd[i].name);
+        }
+    }
+
+    //liberación de memoria
+    free(fav_cmd);
+    fclose(Inv);
+}
 
 void favs_mostrar() {
+    FILE *Inv = fopen("Inventory.txt", "r");  // Abre el archivo en modo lectura
+
+    // Verificador de error
+    if (Inv == NULL) {
+        fprintf(stderr, "Error al abrir el archivo Inventory.txt\n");
+        return;
+    }
+
+    Fav instancia_fav;  //accede al struct en el header
+    int index = 1;
+    int found = 0;
+
+    printf("Lista de comandos favoritos almacenados:\n");
+
+    // Leer cada línea del archivo y almacenarla en instancia_fav.command
+    while (fgets(instancia_fav.command, sizeof(instancia_fav.command), Inv) != NULL) {
+        found = 1;
+        // Asignar el índice a la estructura
+        instancia_fav.id = index++;
+
+        // Imprimir el índice y el comando almacenado
+        printf("[%d] %s", instancia_fav.id, instancia_fav.command);
+    }
+
+    if (!found) {
+        printf("No hay comandos favoritos almacenados.\n");
+    }
+
+    fclose(Inv);
+}
+
+void favs_eliminar() {
+    FILE *Inv = fopen("Inventory.txt", "r");  // Abrir archivo en modo lectura
+
+    if (Inv == NULL) {
+        fprintf(stderr, "Error al abrir el archivo Inventory.txt\n");
+        return;
+    }
+
+    Fav fav_cmds[100];  //temporal
+    int fav_count = 0;
+    char command[100];
+
+    // Lee el archivo y almacena los comandos en arreglo temporal
+    while (fgets(command, sizeof(command), Inv) != NULL) {
+        command[strcspn(command, "\n")] = 0;  //limpia buffer
+        strcpy(fav_cmds[fav_count].command, command);
+        fav_cmds[fav_count].id = fav_count + 1;  // Asignar índices
+        fav_count++;
+    }
+    fclose(Inv);
+
     if (fav_count == 0) {
         printf("No hay comandos favoritos almacenados.\n");
         return;
     }
 
-    printf("Lista de comandos favoritos almacenados:\n");
+    printf("Lista de comandos favoritos:\n");
     for (int i = 0; i < fav_count; i++) {
-        printf("[%d] %s\n", fav_cmd[i].id, fav_cmd[i].command);
+        printf("[%d] %s\n", fav_cmds[i].id, fav_cmds[i].command);
     }
-}
 
-int esNumerica(const char *cadena) {
-    while (*cadena) {
-        if (!isdigit(*cadena)) {
-            return 0; // Si algún carácter no es un dígito, retorna falso
-        }
-        cadena++;
-    }
-    return 1; // Todos los caracteres son dígitos
-}
+    int eliminar_index;
+    printf("Ingrese el número del comando que desea eliminar: ");
+    scanf("%d", &eliminar_index);
 
-void favs_eliminar() {
-    if (fav_count == 0) {
-        printf("No hay comandos favoritos almacenados que eliminar.\n");
+    if (eliminar_index < 1 || eliminar_index > fav_count) {
+        printf("Índice inválido. Operación cancelada.\n");
         return;
     }
-    char id_eliminar[7];
-    char id_antesComa[3], id_despuesComa[3];
-    printf("Ingrese el ID de dos comandos que desee eliminar, de la forma "x,y": ");
-    scanf("%s", &id_eliminar);
 
-    // Verificar que el formato de ingreso es el correcto:
-    char *buscar_coma = strchr(id_eliminar, ',');
-    while(buscar_coma == NULL){
-        printf("Error en el formato al ingresar los IDs. Intentelo nuevamente.\nIngrese el ID de dos comandos que desee eliminar, de la forma "x,y": ");
-        scanf("%s", &id_eliminar);
+    // Abrir el archivo en modo escritura para reescribir los comandos
+    Inv = fopen("Inventory.txt", "w");
+    if (Inv == NULL) {
+        fprintf(stderr, "Error al abrir el archivo Inventory.txt para escritura\n");
+        return;
     }
 
-    // Copiar ID antes y despues de la coma:
-    strncpy(id_antesComa, id_eliminar, buscar_coma - id_eliminar);
-    id_antesComa[buscar_coma - id_aliminar] = '\0';
-    strcpy(id_despuesComa, buscar_coma + 1);
-
-    // Verificar que ambas cadenas sean numéricas
-    while(!esNumerica(id_antesComa) && !esNumerica(id_despuesComa)){
-        printf("Error en el formato al ingresar los IDs, alguno de los IDs dados no es un numero. Intentelo nuevamente.\nIngrese el ID de dos comandos que desee eliminar, de la forma "x,y": ");
-        scanf("%s", &id_eliminar);
-
-        strncpy(id_antesComa, id_eliminar, buscar_coma - id_eliminar);
-        id_antesComa[buscar_coma - id_aliminar] = '\0';
-        strcpy(id_despuesComa, buscar_coma + 1);
-    }
-
-    // Pasar las cadenas a numeros:
-    int id_numeroAntesComa = atoi(id_antesComa);
-    int id_numeroDespuesComa = atoi(id_despuesComa);
-
-    // Borrar los IDs:
-    int encontrar = 0;
+    //Reescribir todos los comandos excepto el seleccionado para eliminar
     for (int i = 0; i < fav_count; i++) {
-        if (fav_cmd[i].id == id_numeroAntesComa) {
-            // Desplazar los elementos de la lista de comandos almacenados:
-            for (int j = i; j < fav_count - 1; j++) {
-                fav_cmd[j] = fav_cmd[j + 1];
-            }
-            fav_count--;
-
-            // Redimensionar el arreglo para liberar memoria
-            fav_cmd = realloc(fav_cmd, sizeof(Fav) * fav_count);
-
-            printf("Comando con ID (%d) eliminado.\n", id_numeroAntesComa);
-            encontrar = 1;
-            break;
-        }
-    }
-    
-    for (int i = 0; i < fav_count; i++) {
-        if (fav_cmd[i].id == id_numeroDespuesComa) {
-            // Desplazar los elementos de la lista de comandos almacenados:
-            for (int j = i; j < fav_count - 1; j++) {
-                fav_cmd[j] = fav_cmd[j + 1];
-            }
-            fav_count--;
-
-            // Redimensionar el arreglo para liberar memoria
-            fav_cmd = realloc(fav_cmd, sizeof(Fav) * fav_count);
-
-            printf("Comando con ID (%d) eliminado.\n", id_numeroDespuesComa);
-            encontrar = 1;
-            break;
+        if (fav_cmds[i].id != eliminar_index) {
+            fprintf(Inv, "%s\n", fav_cmds[i].command);
         }
     }
 
-    if (!encontrar) {
-        printf("No se encontró alguno de los comandos que deseea eliminar\n");
-    }
+    fclose(Inv);
+
+    printf("Comando [%d] eliminado con éxito.\n", eliminar_index);
 }
 
 
 void favs_buscar(const char *cmd){
-    if (fav_count == 0) {
-        printf("La lista de favoritos esta vacia\n");
+    FILE *Inv = fopen("Inventory.txt", "r");  // Abre el archivo en modo lectura
+
+    // Verificador de error
+    if (Inv == NULL) {
+        fprintf(stderr, "Error al abrir el archivo Inventory.txt\n");
         return;
     }
 
+    char command[100];
+    char search_term[100];
     int found = 0;
-    size_t len_cmd = strlen(cmd);
 
-    for(int i = 0; i < fav_count; i++){
-        if(strstr(fav_cmd[i].command, cmd) != NULL){
-            printf("[%d] %s\n", fav_cmd[i].id, fav_cmd[i].command);
+    // Solicitar al usuario el comando a buscar
+    printf("Ingrese el comando que desea buscar: ");
+    scanf("%s", search_term);
+
+    // Leer cada línea del archivo y comparar con el término de búsqueda
+    while (fgets(command, sizeof(command), Inv) != NULL) {
+        command[strcspn(command, "\n")] = 0;  // Eliminar el salto de línea
+
+        if (strcmp(command, search_term) == 0) {
+            printf("El comando '%s' se encuentra en la lista de favoritos.\n", search_term);
             found = 1;
+            break;  // Salir del bucle si se encuentra el comando
         }
     }
 
-    if(!found){
-        printf("No se encontraron comandos que contengan '%s'.\n", cmd);
+    // Si el comando no se encontró
+    if (!found) {
+        printf("El comando '%s' NO se encuentra en la lista de favoritos.\n", search_term);
     }
+
+    // Cerrar el archivo
+    fclose(Inv);
 }
 
 
 void favs_borrar(){
-    if(fav_count == 0){
-        printf("La lista de favoritos ya esta vacia\n");
-        return;
+    FILE *Inv = fopen("Inventory.txt", "w");
+
+    // Verificador de error
+    if (Inv == NULL) {
+        fprintf(stderr, "Error al crear el archivo Inventory.txt\n");
+        exit(EXIT_FAILURE);
     }
 
-    free(fav_cmd);
-    fav_cmd = NULL;
-    fav_count = 0;
+    printf("Archivo Inventory.txt vaciado.\n");
 
-    printf("Todos los comandos favoritos han sido borrados\n");
+    fclose(Inv);  // Cierra el archivo
 }
 
 
