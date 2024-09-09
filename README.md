@@ -1,4 +1,4 @@
-# Shell Personalizada
+# Proyecto 1 Sistemas Operativos: Implementación de shell
 
 Este proyecto incluye la implementación básica de un intérprete de comandos simple en Linux (shell). Permite ejecutar comandos estándar de Linux y conectar comandos por pipes. Además, incluye los comandos adicionales `favs` y `set_recordatorio`:
 
