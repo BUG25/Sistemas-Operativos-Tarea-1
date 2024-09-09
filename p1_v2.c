@@ -127,10 +127,16 @@ void handle_favs(char *input){
         token = strtok(NULL, " ");
         if(token != NULL){
             if(strcmp(token, "crear") == 0){
+                favs_crear();
 
+            }else if(strcmp(token, "agregar" == 0)){
+                favs_agregar();
+            }
             }else if(strcmp(token, "mostrar") == 0){
+                favs_mostrar
 
             }else if(strcmp(token, "eliminar") == 0){
+                favs_eliminar
                 
             }else if(strcmp(token, "buscar") == 0){
                 char *cmd = strtok(NULL, " ");
