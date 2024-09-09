@@ -13,6 +13,7 @@ typedef struct{
 void favs_crear();
 void favs_agregar();
 void favs_mostrar();
+int esNumerica(const char *cadena);
 void favs_eliminar();
 void favs_buscar(const char *cmd);
 void favs_borrar();
