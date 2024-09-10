@@ -16,7 +16,7 @@ Este proyecto incluye la implementación básica de un intérprete de comandos s
 2. Para compilar, ejecuta el siguiente comando en la terminal:
 
     ```bash
-    gcc main.c favs.c -o mishell
+    gcc shell.c favs.c -o mishell
     ```
 
 3. Para ejecutar la shell, utiliza el siguiente comando:
