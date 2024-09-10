@@ -20,46 +20,46 @@ void favs_crear(){
     fclose(Inv);  // Cierra el archivo
 }
 
-void favs_agregar(){
+void favs_agregar(char *command){
+    // Comandos que deben ser excluidos
+    const char *excluded_commands[] = { "favs", "set recordatorio", NULL };
 
-    FILE *Inv = fopen("Inventory.txt", "a");  // Abre el archivo en modo apéndice
-
-    // Verificador de error
-    if (Inv == NULL) {
-        fprintf(stderr, "Error al crear el archivo Inventory.txt\n");
-        exit(EXIT_FAILURE);
-    }
-
-    printf("Ingrese comandos favoritos: ");
-    scanf("%d", &fav_count);
-
-    fav_cmd = (Fav*)malloc(fav_count * sizeof(Fav));
-
-    if(fav_cmd == NULL){
-        fprintf(stderr, "Error de asignación de memoria.\n");
-        exit(EXIT_FAILURE);
-    }
-
-    for(int i = 0; i< fav_count; i++){
-        printf("Ingresa el comando favorito %d: ", i+1);
-        scanf("%s", fav_cmd[i].name);
-
-        //Comporbación de comando
-        char check_cmd[150]; 
-        snprintf(check_cmd, sizeof(check_cmd), "command -v %s > /dev/null 2>&1", fav_cmd[i].name);  //(buffer, tamaño máximo, "comando que verifica si otro comando existe, redirección de salida estándar y de error") 
-        int existe = system(check_cmd);
-
-        if(existe == 0){
-            fprintf(Inv, "%s\n", fav_cmd[i].name);
-            printf("Comando '%s' agregado a favoritos.\n", fav_cmd[i].name);
-        }else{
-            printf("El comando '%s' NO existe en el sistema:(. \n)", fav_cmd[i].name);
+    // Verificar si el comando es uno de los excluidos
+    for (int i = 0; excluded_commands[i] != NULL; i++) {
+        if (strncmp(command, excluded_commands[i], strlen(excluded_commands[i])) == 0) {
+            return; // No agregamos comandos que estén en la lista de excluidos
         }
     }
 
-    //liberación de memoria
-    free(fav_cmd);
+    // Abrir el archivo de favoritos en modo de lectura
+    FILE *Inv = fopen("Inventory.txt", "r");
+    if (Inv == NULL) {
+        fprintf(stderr, "Error al abrir el archivo Inventory.txt\n");
+        return;
+    }
+
+    // Verificar si el comando ya está en la lista de favoritos
+    char line[MAX_INPUT_LENGTH];
+    while (fgets(line, sizeof(line), Inv) != NULL) {
+        line[strcspn(line, "\n")] = 0; // Eliminar el salto de línea
+        if (strcmp(line, command) == 0) {
+            fclose(Inv);
+            return; // El comando ya está en favoritos, no lo agregamos
+        }
+    }
     fclose(Inv);
+
+    // Si no está, lo agregamos a la lista de favoritos
+    Inv = fopen("Inventory.txt", "a");
+    if (Inv == NULL) {
+        fprintf(stderr, "Error al abrir el archivo Inventory.txt para escribir\n");
+        return;
+    }
+
+    fprintf(Inv, "%s\n", command);
+    fclose(Inv);
+
+    printf("Comando '%s' agregado a favoritos.\n", command);
 }
 
 void favs_mostrar() {
