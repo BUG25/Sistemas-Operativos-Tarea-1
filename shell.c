@@ -120,7 +120,6 @@ void execute_pipe_commands(char *commands[], int num_commands) {
 }
 
 //PARA MANEJAR LOS COMANDOS FAVS
-//FALTA COMPLETAR
 void handle_favs(char *input) {
     char *token = strtok(input, " ");
     if (strcmp(token, "favs") == 0) {
@@ -128,28 +127,45 @@ void handle_favs(char *input) {
         if (token != NULL) {
             if (strcmp(token, "crear") == 0) {
                 favs_crear();
+            
             } else if (strcmp(token, "mostrar") == 0) {
                 favs_mostrar();
+            
             } else if (strcmp(token, "eliminar") == 0) {
-                favs_eliminar();  // Llama a la función para eliminar dos comandos
+                favs_eliminar();
+            
             } else if (strcmp(token, "buscar") == 0) {
                 char *cmd = strtok(NULL, " ");
                 if (cmd != NULL) favs_buscar(cmd);
                 else printf("Error: Debes proporcionar un comando para buscar.\n");
+            
             } else if (strcmp(token, "borrar") == 0) {
                 favs_borrar();
+            
             } else if (strcmp(token, "ejecutar") == 0) {
-                // Implementar lógica de ejecución
+                char *id_str = strtok(NULL, " ");
+                if (id_str != NULL) {
+                    int id = atoi(id_str);
+                    favs_ejecutar(id);
+                } else {
+                    printf("Error: Debes proporcionar un ID para ejecutar.\n");
+                }
+            
             } else if (strcmp(token, "cargar") == 0) {
-                // Implementar lógica de carga
+                favs_cargar();
+            
             } else if (strcmp(token, "guardar") == 0) {
-                // Implementar lógica de guardar
+                favs_guardar();
+            
             } else {
                 printf("Error: Comando desconocido después de 'favs'.\n");
             }
+        } else {
+            printf("Error: Debes proporcionar un comando después de 'favs'.\n");
         }
     }
 }
+
 
 
 //Función set_secordatorio
