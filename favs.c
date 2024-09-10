@@ -222,7 +222,7 @@ void favs_ejecutar(int id) {
 
     Fav fav_cmds[100];
     int fav_count = 0;
-    char command[100];
+    char command[MAX_INPUT_LENGTH];
 
     // Lee todos los comandos favoritos en el arreglo fav_cmds
     while (fgets(command, sizeof(command), Inv) != NULL) {
@@ -244,14 +244,21 @@ void favs_ejecutar(int id) {
         return;
     }
 
+    // Separar el comando en palabras para execvp
+    char *args[MAX_INPUT_LENGTH / 2 + 1];
+    int arg_count = 0;
+    char *token = strtok(fav_cmds[id - 1].command, " ");
+
+    while (token != NULL && arg_count < MAX_INPUT_LENGTH / 2) {
+        args[arg_count++] = token;
+        token = strtok(NULL, " ");
+    }
+    args[arg_count] = NULL;  // Termina la lista de argumentos con NULL
+
     // Ejecutar el comando correspondiente
     pid_t pid = fork();
     if (pid == 0) {
         // Proceso hijo
-        char *args[3]; // Comando y NULL
-        args[0] = fav_cmds[id - 1].command; // Asigna el comando a ejecutar
-        args[1] = NULL; // Termina la lista de argumentos
-
         printf("Ejecutando comando: %s\n", args[0]);
 
         // Ejecuta el comando usando execvp
