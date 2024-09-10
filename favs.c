@@ -314,4 +314,21 @@ void favs_cargar(){
     }
 }
 
-void favs_guardar(){}
+void favs_guardar(){
+    // Abrir el archivo en modo escritura ("w") para sobrescribir el contenido existente
+    FILE *Inv = fopen("Inventory.txt", "w");
+
+    if (Inv == NULL) {
+        fprintf(stderr, "Error al abrir el archivo Inventory.txt para guardar.\n");
+        return;
+    }
+
+    // Guardar cada comando en el archivo
+    for (int i = 0; i < fav_count; i++) {
+        fprintf(Inv, "%s\n", fav_cmd[i].command);
+    }
+
+    fclose(Inv);  // Cerrar el archivo
+
+    printf("Comandos guardados exitosamente en Inventory.txt.\n");
+}
