@@ -7,7 +7,6 @@
 #include "favs.h"
 
 #define MAX_INPUT_LENGTH 1024
-// Agregación de memoria dinámica
 
 // Divide un comando en argumentos
 int parse_command(char *command, char ***args) {
@@ -119,86 +118,82 @@ void execute_pipe_commands(char *commands[], int num_commands) {
     }
 }
 
-//PARA MANEJAR LOS COMANDOS FAVS
-//FALTA COMPLETAR
-void handle_favs(char *input){
+// Manejo de los comandos favs
+void handle_favs(char *input) {
     char *token = strtok(input, " ");
-    if(strcmp(token, "favs") == 0){
+    if (token != NULL && strcmp(token, "favs") == 0) {
         token = strtok(NULL, " ");
-        if(token != NULL){
-            if(strcmp(token, "crear") == 0){
+        if (token != NULL) {
+            if (strcmp(token, "crear") == 0) {
                 favs_crear();
-
-            }else if(strcmp(token, "agregar" == 0)){
-                favs_agregar();
-            }
-            }else if(strcmp(token, "mostrar") == 0){
-                favs_mostrar
-
-            }else if(strcmp(token, "eliminar") == 0){
-                favs_eliminar
-                
-            }else if(strcmp(token, "buscar") == 0){
+            } else if (strcmp(token, "agregar") == 0) {
+                char *cmd = strtok(NULL, "");
+                if (cmd != NULL) favs_agregar(cmd);
+                else printf("Error: Debes proporcionar un comando para agregar.\n");
+            } else if (strcmp(token, "mostrar") == 0) {
+                favs_mostrar();
+            } else if (strcmp(token, "eliminar") == 0) {
+                favs_eliminar();
+            } else if (strcmp(token, "buscar") == 0) {
                 char *cmd = strtok(NULL, " ");
-                if(cmd != NULL) favs_buscar(cmd);
+                if (cmd != NULL) favs_buscar(cmd);
                 else printf("Error: Debes proporcionar un comando para buscar.\n");
-            }else if(strcmp(token, "borrar") == 0){
+            } else if (strcmp(token, "borrar") == 0) {
                 favs_borrar();
-            }else if(strcmp(token, "ejecutar") == 0){
-
-            }else if(strcmp(token, "cargar") == 0){
-
-            }else if(strcmp(token, "guardar") == 0){
-
-            }else{
-                printf("Error: Comando desconocido despues de 'favs'.\n");
+            } else if (strcmp(token, "ejecutar") == 0) {
+                // Implementar favs_ejecutar aquí si es necesario
+            } else if (strcmp(token, "cargar") == 0) {
+                // Implementar favs_cargar aquí si es necesario
+            } else if (strcmp(token, "guardar") == 0) {
+                // Implementar favs_guardar aquí si es necesario
+            } else {
+                printf("Error: Comando desconocido después de 'favs'.\n");
             }
         }
     }
-    
 }
 
-//Función set_secordatorio
-void print_recordatorio(const char *message){
+// Función para mostrar recordatorios
+void print_recordatorio(const char *message) {
     const char *BOLD_MAGENTA = "\033[1;35m";
     const char *RESET_COLOR = "\033[0m";
-    printf("%s* Recordatorio: %s *%s\n", BOLD_MAGENTA, message, BOLD_MAGENTA);
-    printf("%s$ %s", RESET_COLOR, RESET_COLOR);
+    printf("%s* Recordatorio: %s *%s\n", BOLD_MAGENTA, message, RESET_COLOR);
     fflush(stdout);
 }
 
-void set_recordatorio(char *input){
+// Función para configurar recordatorios
+void set_recordatorio(char *input) {
     char *token = strtok(input, " ");
-    if(token == NULL){
+    if (token == NULL) {
         printf("¡Error! Debes especificar un tiempo y un mensaje\n");
         return;
     }
 
     int seg = atoi(token);
-    if(seg <= 0){
+    if (seg <= 0) {
         printf("¡Error! El tiempo debe ser mayor a cero\n");
         return;
     }
 
     char *mensaje = strtok(NULL, "");
-    if(mensaje == NULL){
+    if (mensaje == NULL) {
         printf("¡Error! Debes proporcionar un mensaje para el recordatorio\n");
         return;
     }
 
-    //Por si se escribe el mensaje entre comillas
-    if(mensaje[0] == '\"'){
+    // Manejar mensajes entre comillas
+    if (mensaje[0] == '\"') {
         mensaje++;
         char *comilla_cierre = strrchr(mensaje, '\"');
-        if(comilla_cierre != NULL) *comilla_cierre = '\0';
+        if (comilla_cierre != NULL) *comilla_cierre = '\0';
     }
-    
+
     pid_t pid = fork();
-    if(pid == 0){
+    if (pid == 0) {
         sleep(seg);
         print_recordatorio(mensaje);
         exit(EXIT_SUCCESS);
-    }else if(pid < 0){
+    } else if (pid < 0) {
         perror("Error al crear el proceso hijo");
     }
 }
@@ -231,18 +226,18 @@ int main() {
             continue;
         }
 
+        // Manejo de recordatorios
         if (strncmp(input, "set recordatorio ", 17) == 0) {
             set_recordatorio(input + 17);
             continue;
         }
 
-        // **Agregación automática del comando a favoritos**
-        // Excluir comandos que no deben agregarse automáticamente
+        // Agregación automática de comandos a favoritos (excluyendo algunos)
         if (strncmp(input, "favs", 4) != 0 && strncmp(input, "set recordatorio", 16) != 0) {
-            favs_agregar(input); // Intenta agregar a favoritos si no es un comando de manejo de favoritos
+            favs_agregar(input);
         }
 
-        // Divide el input en comandos usando "|" como delimitador
+        // Dividir input en comandos usando "|" como delimitador
         char *token = strtok(input, "|");
         num_commands = 0;
         commands = NULL;
@@ -256,6 +251,7 @@ int main() {
             commands[num_commands++] = token;
             token = strtok(NULL, "|");
         }
+
         commands = realloc(commands, sizeof(char *) * (num_commands + 1));
         if (commands == NULL) {
             perror("Error al asignar memoria");
@@ -263,20 +259,19 @@ int main() {
         }
         commands[num_commands] = NULL;
 
-        // Elimina espacios extra en los comandos
+        // Eliminar espacios extra en los comandos
         for (int i = 0; i < num_commands; i++) {
-            commands[i] += strspn(commands[i], " ");
+            commands[i] = strtok(commands[i], " ");
         }
 
-        // Ejecución de comandos, si hay más de uno se ejecuta con pipes
+        // Si hay más de un comando, ejecuta con pipes
         if (num_commands > 1) {
             execute_pipe_commands(commands, num_commands);
-        } else {
+        } else { // Ejecutar sin pipes
             pid_t pid = fork();
             if (pid == 0) {
                 execute_command(commands[0]);
-            } else if (pid < 0) {
-                perror("Error al crear el proceso hijo");
+                exit(EXIT_SUCCESS);
             } else {
                 wait(NULL);
             }
