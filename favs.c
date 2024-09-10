@@ -104,13 +104,13 @@ void favs_eliminar() {
         return;
     }
 
-    Fav fav_cmds[100];  //temporal
+    Fav fav_cmds[100];  // Temporal
     int fav_count = 0;
-    char command[100];
+    char command[MAX_INPUT_LENGTH];
 
     // Lee el archivo y almacena los comandos en arreglo temporal
     while (fgets(command, sizeof(command), Inv) != NULL) {
-        command[strcspn(command, "\n")] = 0;  //limpia buffer
+        command[strcspn(command, "\n")] = 0;  // Limpia buffer
         strcpy(fav_cmds[fav_count].command, command);
         fav_cmds[fav_count].id = fav_count + 1;  // Asignar índices
         fav_count++;
@@ -127,12 +127,22 @@ void favs_eliminar() {
         printf("[%d] %s\n", fav_cmds[i].id, fav_cmds[i].command);
     }
 
-    int eliminar_index;
-    printf("Ingrese el número del comando que desea eliminar: ");
-    scanf("%d", &eliminar_index);
+    char input[50];
+    int id1, id2;
 
-    if (eliminar_index < 1 || eliminar_index > fav_count) {
-        printf("Índice inválido. Operación cancelada.\n");
+    // Pedir dos IDs separados por coma
+    printf("Ingrese dos números de comandos a eliminar separados por coma (e.g., 1,3): ");
+    fgets(input, sizeof(input), stdin);
+
+    // Parsear los IDs
+    if (sscanf(input, "%d,%d", &id1, &id2) != 2) {
+        printf("Entrada inválida. Asegúrese de ingresar dos números separados por coma.\n");
+        return;
+    }
+
+    // Verificar los IDs
+    if ((id1 < 1 || id1 > fav_count) || (id2 < 1 || id2 > fav_count)) {
+        printf("Índices inválidos. Operación cancelada.\n");
         return;
     }
 
@@ -143,16 +153,16 @@ void favs_eliminar() {
         return;
     }
 
-    //Reescribir todos los comandos excepto el seleccionado para eliminar
+    // Reescribir todos los comandos excepto los seleccionados para eliminar
     for (int i = 0; i < fav_count; i++) {
-        if (fav_cmds[i].id != eliminar_index) {
+        if (fav_cmds[i].id != id1 && fav_cmds[i].id != id2) {
             fprintf(Inv, "%s\n", fav_cmds[i].command);
         }
     }
 
     fclose(Inv);
 
-    printf("Comando [%d] eliminado con éxito.\n", eliminar_index);
+    printf("Comandos [%d] y [%d] eliminados con éxito.\n", id1, id2);
 }
 
 
