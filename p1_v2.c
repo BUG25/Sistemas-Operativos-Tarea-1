@@ -225,7 +225,7 @@ int main() {
             break;
         }
 
-        //MANEJO DE LOS FAVS
+        // MANEJO DE LOS FAVS
         if (strncmp(input, "favs ", 5) == 0) {
             handle_favs(input);
             continue;
@@ -234,6 +234,12 @@ int main() {
         if (strncmp(input, "set recordatorio ", 17) == 0) {
             set_recordatorio(input + 17);
             continue;
+        }
+
+        // **Agregación automática del comando a favoritos**
+        // Excluir comandos que no deben agregarse automáticamente
+        if (strncmp(input, "favs", 4) != 0 && strncmp(input, "set recordatorio", 16) != 0) {
+            favs_agregar(input); // Intenta agregar a favoritos si no es un comando de manejo de favoritos
         }
 
         // Divide el input en comandos usando "|" como delimitador
