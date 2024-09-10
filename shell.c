@@ -121,39 +121,35 @@ void execute_pipe_commands(char *commands[], int num_commands) {
 
 //PARA MANEJAR LOS COMANDOS FAVS
 //FALTA COMPLETAR
-void handle_favs(char *input){
+void handle_favs(char *input) {
     char *token = strtok(input, " ");
-    if(strcmp(token, "favs") == 0){
+    if (strcmp(token, "favs") == 0) {
         token = strtok(NULL, " ");
-        if(token != NULL){
-            if(strcmp(token, "crear") == 0){
+        if (token != NULL) {
+            if (strcmp(token, "crear") == 0) {
                 favs_crear();
-
-            
-            }else if(strcmp(token, "mostrar") == 0){
+            } else if (strcmp(token, "mostrar") == 0) {
                 favs_mostrar();
-
-            }else if(strcmp(token, "eliminar") == 0){
-                favs_eliminar();
-                
-            }else if(strcmp(token, "buscar") == 0){
+            } else if (strcmp(token, "eliminar") == 0) {
+                favs_eliminar();  // Llama a la función para eliminar dos comandos
+            } else if (strcmp(token, "buscar") == 0) {
                 char *cmd = strtok(NULL, " ");
-                if(cmd != NULL) favs_buscar(cmd);
+                if (cmd != NULL) favs_buscar(cmd);
                 else printf("Error: Debes proporcionar un comando para buscar.\n");
-            }else if(strcmp(token, "borrar") == 0){
+            } else if (strcmp(token, "borrar") == 0) {
                 favs_borrar();
-            }else if(strcmp(token, "ejecutar") == 0){
-
-            }else if(strcmp(token, "cargar") == 0){
-
-            }else if(strcmp(token, "guardar") == 0){
-
-            }else{
-                printf("Error: Comando desconocido despues de 'favs'.\n");
+            } else if (strcmp(token, "ejecutar") == 0) {
+                // Implementar lógica de ejecución
+            } else if (strcmp(token, "cargar") == 0) {
+                // Implementar lógica de carga
+            } else if (strcmp(token, "guardar") == 0) {
+                // Implementar lógica de guardar
+            } else {
+                printf("Error: Comando desconocido después de 'favs'.\n");
             }
         }
     }
-} 
+}
 
 
 //Función set_secordatorio
