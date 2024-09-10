@@ -207,7 +207,64 @@ void favs_borrar(){
 }
 
 
-void favs_ejecutar(){}
+void favs_ejecutar(){
+    FILE *Inv = fopen("Inventory.txt", "r");
+
+    if (Inv == NULL) {
+        fprintf(stderr, "Error al abrir el archivo Inventory.txt\n");
+        return;
+    }
+
+    Fav fav_cmds[100];
+    int fav_count = 0;
+    char command[100];
+
+    // Lee todos los comandos favoritos en el arreglo fav_cmds
+    while (fgets(command, sizeof(command), Inv) != NULL) {
+        command[strcspn(command, "\n")] = 0;  // Limpia el salto de línea
+        strcpy(fav_cmds[fav_count].command, command);
+        fav_cmds[fav_count].id = fav_count + 1; // Asigna un índice
+        fav_count++;
+    }
+    fclose(Inv);
+
+    if (fav_count == 0) {
+        printf("No hay comandos favoritos almacenados.\n");
+        return;
+    }
+
+    int num;
+    printf("Ingrese el número del comando que desea ejecutar: ");
+    scanf("%d", &num);
+
+    if (num < 1 || num > fav_count) {
+        printf("Número de comando inválido.\n");
+        return;
+    }
+
+    // Ejecutar el comando correspondiente
+    pid_t pid = fork();
+    if (pid == 0) {
+        // Proceso hijo
+        char *args[3]; // Comando y NULL
+        args[0] = fav_cmds[num - 1].command; // Asigna el comando a ejecutar
+        args[1] = NULL; // Termina la lista de argumentos
+
+        printf("Ejecutando comando: %s\n", args[0]);
+
+        // Ejecuta el comando usando execvp
+        if (execvp(args[0], args) == -1) {
+            perror("Error al ejecutar el comando");
+        }
+        exit(EXIT_FAILURE); // Sale si hay error en execvp
+    } else if (pid < 0) {
+        // Error en fork
+        perror("Error al crear el proceso hijo");
+    } else {
+        // Proceso padre espera a que el hijo termine
+        wait(NULL);
+    }
+}
 
 void favs_cargar(){}
 
