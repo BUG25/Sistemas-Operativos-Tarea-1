@@ -269,6 +269,14 @@ void favs_ejecutar(){
 }
 
 void favs_cargar(){
+    #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/wait.h> 
+#include "favs.h"
+
+void favs_ejecutar(int id) {
     FILE *Inv = fopen("Inventory.txt", "r");
 
     if (Inv == NULL) {
@@ -276,43 +284,51 @@ void favs_cargar(){
         return;
     }
 
-    // Limpiar la memoria previa si ya se cargaron comandos antes
-    if (fav_cmd != NULL) {
-        free(fav_cmd);
-        fav_cmd = NULL;
-        fav_count = 0;
+    Fav fav_cmds[100];
+    int fav_count = 0;
+    char command[100];
+
+    // Lee todos los comandos favoritos en el arreglo fav_cmds
+    while (fgets(command, sizeof(command), Inv) != NULL) {
+        command[strcspn(command, "\n")] = 0;  // Limpia el salto de línea
+        strcpy(fav_cmds[fav_count].command, command);
+        fav_cmds[fav_count].id = fav_count + 1; // Asigna un índice
+        fav_count++;
     }
+    fclose(Inv);
 
-    // Inicializa el array dinámico para guardar los comandos
-    fav_cmd = (Fav *)malloc(100 * sizeof(Fav)); // Asumimos un máximo de 100 comandos para simplificar
-
-    if (fav_cmd == NULL) {
-        fprintf(stderr, "Error al asignar memoria para los comandos favoritos.\n");
-        fclose(Inv);
+    if (fav_count == 0) {
+        printf("No hay comandos favoritos almacenados.\n");
         return;
     }
 
-    char command[MAX_INPUT_LENGTH];
-    fav_count = 0;
-
-    // Leer cada línea del archivo y almacenarla en fav_cmd
-    while (fgets(command, sizeof(command), Inv) != NULL) {
-        command[strcspn(command, "\n")] = '\0';  // Eliminar el salto de línea al final
-        strcpy(fav_cmd[fav_count].command, command);
-        fav_cmd[fav_count].id = fav_count + 1;  // Asignar un número de identificación
-        fav_count++;
+    // Validación del número proporcionado
+    if (id < 1 || id > fav_count) {
+        printf("Número de comando inválido.\n");
+        return;
     }
 
-    fclose(Inv);
+    // Ejecutar el comando correspondiente
+    pid_t pid = fork();
+    if (pid == 0) {
+        // Proceso hijo
+        char *args[3]; // Comando y NULL
+        args[0] = fav_cmds[id - 1].command; // Asigna el comando a ejecutar
+        args[1] = NULL; // Termina la lista de argumentos
 
-    // Mostrar en pantalla los comandos cargados
-    if (fav_count == 0) {
-        printf("No hay comandos favoritos almacenados.\n");
-    } else {
-        printf("Comandos favoritos cargados desde Inventory.txt:\n");
-        for (int i = 0; i < fav_count; i++) {
-            printf("[%d] %s\n", fav_cmd[i].id, fav_cmd[i].command);
+        printf("Ejecutando comando: %s\n", args[0]);
+
+        // Ejecuta el comando usando execvp
+        if (execvp(args[0], args) == -1) {
+            perror("Error al ejecutar el comando");
         }
+        exit(EXIT_FAILURE); // Sale si hay error en execvp
+    } else if (pid < 0) {
+        // Error en fork
+        perror("Error al crear el proceso hijo");
+    } else {
+        // Proceso padre espera a que el hijo termine
+        wait(NULL);
     }
 }
 
