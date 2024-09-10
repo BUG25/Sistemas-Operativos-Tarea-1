@@ -266,6 +266,52 @@ void favs_ejecutar(){
     }
 }
 
-void favs_cargar(){}
+void favs_cargar(){
+    FILE *Inv = fopen("Inventory.txt", "r");
+
+    if (Inv == NULL) {
+        fprintf(stderr, "Error al abrir el archivo Inventory.txt\n");
+        return;
+    }
+
+    // Limpiar la memoria previa si ya se cargaron comandos antes
+    if (fav_cmd != NULL) {
+        free(fav_cmd);
+        fav_cmd = NULL;
+        fav_count = 0;
+    }
+
+    // Inicializa el array dinámico para guardar los comandos
+    fav_cmd = (Fav *)malloc(100 * sizeof(Fav)); // Asumimos un máximo de 100 comandos para simplificar
+
+    if (fav_cmd == NULL) {
+        fprintf(stderr, "Error al asignar memoria para los comandos favoritos.\n");
+        fclose(Inv);
+        return;
+    }
+
+    char command[MAX_INPUT_LENGTH];
+    fav_count = 0;
+
+    // Leer cada línea del archivo y almacenarla en fav_cmd
+    while (fgets(command, sizeof(command), Inv) != NULL) {
+        command[strcspn(command, "\n")] = '\0';  // Eliminar el salto de línea al final
+        strcpy(fav_cmd[fav_count].command, command);
+        fav_cmd[fav_count].id = fav_count + 1;  // Asignar un número de identificación
+        fav_count++;
+    }
+
+    fclose(Inv);
+
+    // Mostrar en pantalla los comandos cargados
+    if (fav_count == 0) {
+        printf("No hay comandos favoritos almacenados.\n");
+    } else {
+        printf("Comandos favoritos cargados desde Inventory.txt:\n");
+        for (int i = 0; i < fav_count; i++) {
+            printf("[%d] %s\n", fav_cmd[i].id, fav_cmd[i].command);
+        }
+    }
+}
 
 void favs_guardar(){}
