@@ -157,39 +157,33 @@ void favs_eliminar() {
 
 
 void favs_buscar(const char *cmd){
-    FILE *Inv = fopen("Inventory.txt", "r");  // Abre el archivo en modo lectura
+    FILE *Inv = fopen("Inventory.txt", "r");
 
-    // Verificador de error
-    if (Inv == NULL) {
+    if(Inv == NULL){
         fprintf(stderr, "Error al abrir el archivo Inventory.txt\n");
         return;
     }
 
     char command[100];
-    char search_term[100];
     int found = 0;
+    int index = 1;
 
-    // Solicitar al usuario el comando a buscar
-    printf("Ingrese el comando que desea buscar: ");
-    scanf("%s", search_term);
+    printf("Comandos que contienen '%s':\n", cmd);
 
-    // Leer cada línea del archivo y comparar con el término de búsqueda
-    while (fgets(command, sizeof(command), Inv) != NULL) {
-        command[strcspn(command, "\n")] = 0;  // Eliminar el salto de línea
+    while(fgets(command, sizeof(command), Inv) != NULL){
+        command[strcspn(command, "\n")] = 0;
 
-        if (strcmp(command, search_term) == 0) {
-            printf("El comando '%s' se encuentra en la lista de favoritos.\n", search_term);
+        if(strstr(command, cmd) != NULL){
+            printf("[%d] %s\n", index, command);
             found = 1;
-            break;  // Salir del bucle si se encuentra el comando
         }
+        index++;
     }
 
-    // Si el comando no se encontró
     if (!found) {
-        printf("El comando '%s' NO se encuentra en la lista de favoritos.\n", search_term);
+        printf("No se encontraron comandos que contengan '%s'.\n", cmd);
     }
 
-    // Cerrar el archivo
     fclose(Inv);
 }
 
